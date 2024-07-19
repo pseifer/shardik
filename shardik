@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# First, determine if using file watch mode.
+if [ "$1" == "--watch" ]; then
+    if command -v "entr" &>/dev/null; then
+        ls "$2" | entr -c ./shardik "$2"
+    else
+        echo "Missing 'entr', please install."
+    fi
+    exit 0
+fi
+
+# If in deployed project, run from 'bin' folder.
+if [ -d "bin" ]; then
+    if command -v "rlwrap" &>/dev/null; then
+        rlwrap ./bin/shardik "$@"
+    else
+        ./bin/shardik "$@"
+    fi
+# Otherwise, run from local build.
+else
+    # Build first, if required.
+    if [ ! -d "target/universal/stage/bin/" ]; then
+        sbt stage
+    fi
+    # Run shapes 2 shapes, forward arguments.
+    if command -v "rlwrap" &>/dev/null; then
+        rlwrap ./target/universal/stage/bin/shardik "$@"
+    else
+        ./target/universal/stage/bin/shardik "$@"
+    fi
+fi
